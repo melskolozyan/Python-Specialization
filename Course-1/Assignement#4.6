@@ -12,7 +12,9 @@ def computepay(hrs,rate):
 	else: pay = (hrs-40)*1.5*rate + 40*rate
 	return pay
 
-hrs = float(raw_input("Enter Hours:"))
-rate = float(raw_input("Enter Rate:"))
-p = computepay(hrs,rate)
-print p
+try:
+	hrs = float(raw_input("Enter Hours:"))
+	rate = float(raw_input("Enter Rate:"))
+	p = computepay(hrs,rate)
+	print p
+except: print "Enter a numeric value"
