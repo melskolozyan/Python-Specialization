@@ -1,0 +1,38 @@
+'''import socket
+mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+mysock.connect( ('www.py4inf.com', 80) )
+
+mysock.send('GET http://www.py4inf.com/code/romeo.txt HTTP/1.0\n\n')
+while True:
+    data = mysock.recv(512)
+    if len(data) < 1: break
+    print data
+mysock.close()
+
+import urllib
+link = urllib.urlopen('http://gearnuke.com/pokemon-go-max-cp-pokemon-pokemon-go/')
+n =  open('new.txt', 'w')
+for line in link:
+    n.write(line)
+    n.close()'''
+
+import urllib
+url = raw_input('http://www.')
+http = 'http://www.'
+url = urllib.urlopen(http + url)
+
+count = {}
+for line in url:
+    line = line.split()
+    for word in line:
+        count[word] = count.get(word, 0) + 1
+'''list =[]
+for k,v in count.items():
+    list.append((v,k))
+list.sort(reverse=True)
+for val, key in list:
+    print key, val'''
+#Sorts the tuples in the dictionary based on the values and prints the first five words
+#(word first and the number second).
+for k, v  in sorted([(v,k) for k,v in count.items()], reverse=True)[:5]:
+    print v+':', k
