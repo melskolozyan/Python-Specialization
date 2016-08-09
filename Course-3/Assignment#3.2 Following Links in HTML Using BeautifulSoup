@@ -1,1 +1,38 @@
+'''In this assignment you will write a Python program that expands on http://www.pythonlearn.com/code/urllinks.py.
+The program will use urllib to read the HTML from the data files below, extract the href= vaues from the anchor tags,
+scan for a tag that is in a particular position relative to the first name in the list, follow that link and repeat
+the process a number of times and report the last name you find.'''\
 
+#Desired output
+# Enter URL: http://python-data.dr-chuck.net/known_by_Fikret.html
+# Enter count: 4
+# Enter position: 3
+# Retrieving: http://python-data.dr-chuck.net/known_by_Fikret.html
+# Retrieving: http://python-data.dr-chuck.net/known_by_Montgomery.html
+# Retrieving: http://python-data.dr-chuck.net/known_by_Mhairade.html
+# Retrieving: http://python-data.dr-chuck.net/known_by_Butchi.html
+# Retrieving: http://python-data.dr-chuck.net/known_by_Anayah.html
+# Sequence of names: Fikret Montgomery Mhairade Butchi Anayah
+
+import urllib
+from BeautifulSoup import *
+
+url = raw_input('Enter URL: ')
+if len(url) < 1: url = 'http://python-data.dr-chuck.net/known_by_Fikret.html '
+count = raw_input('Enter count:')
+if len(count) < 1: count = 4
+pos = raw_input('Enter position: ')
+if len(pos) < 1: pos = 3
+count = int(count)
+pos = int(pos)
+print url
+for i in range(count):
+    url = urllib.urlopen(url).read()
+    soup = BeautifulSoup(url)
+    tags = soup('a')
+    list = []
+    for tag in tags:
+        list.append(tag.get('href', None))
+    url = list[pos - 1]
+    print url
+    i+=1
