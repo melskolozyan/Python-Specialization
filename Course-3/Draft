@@ -10,13 +10,6 @@ while True:
 mysock.close()
 
 import urllib
-link = urllib.urlopen('http://gearnuke.com/pokemon-go-max-cp-pokemon-pokemon-go/')
-n =  open('new.txt', 'w')
-for line in link:
-    n.write(line)
-    n.close()'''
-
-import urllib
 url = raw_input('http://www.')
 http = 'http://www.'
 url = urllib.urlopen(http + url)
@@ -26,13 +19,38 @@ for line in url:
     line = line.split()
     for word in line:
         count[word] = count.get(word, 0) + 1
-'''list =[]
+list =[]
 for k,v in count.items():
     list.append((v,k))
 list.sort(reverse=True)
 for val, key in list:
-    print key, val'''
+    print key, val
 #Sorts the tuples in the dictionary based on the values and prints the first five words
 #(word first and the number second).
 for k, v  in sorted([(v,k) for k,v in count.items()], reverse=True)[:5]:
-    print v+':', k
+    print v+':', k'''
+
+import urllib
+from BeautifulSoup import *
+url = raw_input("Enter website: ")
+if len(url) < 1: url = 'http://gearnuke.com/pokemon-go-max-cp-pokemon-pokemon-go/'
+html = urllib.urlopen(url).read()
+soup = BeautifulSoup(html)
+tags = soup('td')
+i = 3
+names = []
+cps = []
+list = []
+dict = {}
+for tag in tags:
+#    print 'Contents:',tag.contents[0]
+    list.append(tag.contents[0])
+    if i%3 == 1: names.append(tag.contents[0])
+    if i%3 == 2: cps.append(tag.contents[0])
+    i+=1
+num = len(list)/3
+for i in range(num):
+    dict[float(cps[i])] = names[i]
+a = sorted(dict.items(), reverse=True)
+for k,v in a[:10]:
+    print v, k
