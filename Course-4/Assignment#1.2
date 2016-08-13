@@ -1,0 +1,44 @@
+'''This application will read the mailbox data (mbox.txt) count up the number email messages per organization
+(i.e. domain name of the email address) using a database with the following schema to maintain the counts.
+
+CREATE TABLE Counts (org TEXT, count INTEGER)
+When you have run the program on mbox.txt upload the resulting database file above for grading. If you run the program
+multiple times in testing or with dfferent files, make sure to empty out the data before each run.'''
+
+# Desired output
+# Enter file name: mbox.txt
+# uct.ac.za 96
+# media.berkeley.edu 56
+# umich.edu 491
+# iupui.edu 536
+# caret.cam.ac.uk 157
+
+import sqlite3
+
+file = sqlite3.connect('mbox.sqlite') #the file that will contain database info
+cur = file.cursor() #this is needed to push SQL commands from Python
+
+cur.execute('DROP TABLE IF EXISTS Counts') #If there is a table with the name Counts delete it
+cur.execute('CREATE TABLE Counts(org TEXT, count INT)') #Create a new table with the columns org and count
+fn = raw_input('Enter file name:')
+if len(fn) < 1: fn = 'mbox-short.txt'
+fn = open(fn)
+for line in fn:
+    if not line.startswith('From '): continue
+    org = line.split()[1].split('@')[1] #line 26-32 opens a file loops through lines and finds the domains of the emails
+    cur.execute('SELECT count FROM Counts WHERE org = ?', (org, )) #here the program chooses the column with the org(domain of an email) which was found
+    try:
+        count = cur.fetchone()[0]
+        cur.execute('UPDATE Counts SET count=count+1 WHERE org = ?', (org, ))
+    except:
+        cur.execute('INSERT INTO Counts (org, count) VALUES (?, 1)', (org, ))
+#lines 34-38 set a default value of 1 to the orgs that haven't yet been found and add the count in case it was found in the database
+# In order to accelerate the process file.commit() can be outside the loop
+# If it is not the program will save the changes to the file every time it runs through a new line from the txt file
+file.commit() #saves the file
+command = 'SELECT * FROM Counts' #ORDER BY org or count can also be added for sorting
+for row in cur.execute(command):
+    print str(row[0]), row[1]
+#selects all columns and prints the org and their count
+#each row in the database retreived with this for loop is of type tuple
+cur.close()
