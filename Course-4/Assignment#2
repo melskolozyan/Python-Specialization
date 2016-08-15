@@ -1,0 +1,139 @@
+'''Musical Track Database
+This application will read an iTunes export file in XML and produce a properly normalized database with this structure:
+
+CREATE TABLE Artist (
+    id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    name    TEXT UNIQUE
+);
+
+CREATE TABLE Genre (
+    id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    name    TEXT UNIQUE
+);
+
+CREATE TABLE Album (
+    id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    artist_id  INTEGER,
+    title   TEXT UNIQUE
+);
+
+CREATE TABLE Track (
+    id  INTEGER NOT NULL PRIMARY KEY
+        AUTOINCREMENT UNIQUE,
+    title TEXT  UNIQUE,
+    album_id  INTEGER,
+    genre_id  INTEGER,
+    len INTEGER, rating INTEGER, count INTEGER
+);
+If you run the program multiple times in testing or with different files, make sure to empty out the data
+before each run.
+
+You can use this code as a starting point for your application: http://www.pythonlearn.com/code/tracks.zip. The ZIP
+file contains the Library.xml file to be used for this assignment. You can export your own tracks from iTunes and create
+a database, but for the database that you turn in for this assignment, only use the Library.xml data that is provided.
+
+To grade this assignment, the program will run a query like this on your uploaded database and look for the data it
+expects to see:
+
+SELECT Track.title, Artist.name, Album.title, Genre.name
+    FROM Track JOIN Genre JOIN Album JOIN Artist
+    ON Track.genre_id = Genre.ID and Track.album_id = Album.id
+        AND Album.artist_id = Artist.id
+    ORDER BY Artist.name LIMIT 3
+The expected result of this query on your database is:
+Track	Artist	Album	Genre
+Chase the Ace	AC/DC	Who Made Who	Rock
+D.T.	AC/DC	Who Made Who	Rock
+For Those About To Rock (We Salute You)	AC/DC	Who Made Who	Rock
+'''
+
+import xml.etree.ElementTree as ET
+import sqlite3
+file = sqlite3.connect('music.sqlite')
+cur = file.cursor()
+#import sqlite and xml libraries, specify the database file and establish a cursos to send commands
+
+# lines 56-83 Create the Tables Artist, Album, Genre, Track (Optionally deletes the previous copies)
+# cur.execute('''DROP TABLE IF EXISTS Artist''')
+cur.execute('''CREATE TABLE Artist(
+id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+name TEXT UNIQUE)''')
+
+# cur.execute('''DROP TABLE IF EXISTS Genre''')
+cur.execute('''CREATE TABLE IF NOT EXISTS Genre (
+id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+name TEXT UNIQUE)''')
+
+# cur.execute('''DROP TABLE IF EXISTS Album''')
+cur.execute('''
+CREATE TABLE IF NOT EXISTS Album (
+id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+title TEXT UNIQUE,
+artist_id INTEGER
+)''')
+
+# cur.execute('''DROP TABLE IF EXISTS Track''')
+cur.execute('''CREATE TABLE IF NOT EXISTS Track(
+id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+album_id INTEGER,
+genre_id INTEGER,
+title TEXT UNIQUE,
+length INTEGER,
+rating INTEGER,
+count INTEGER
+)''')
+# This function iterates through the dict objects obtained from the xml file and checks if key inserted is in the dict
+# If it is returns the next tag it finds. If it isn't returns None
+def lookup(d, key):
+    val = False
+    for i in d:
+        if val: return i.text
+        if i.tag == 'key' and i.text == key: val = True
+    return None
+
+# Prompts for a file name, finds all the triple dictionary objects and fills them into the list 'tree'
+fn = raw_input('Enter file name: ')
+if len(fn) < 1: fn = 'Library.xml'
+tree = ET.parse(fn)
+dicts = tree.findall('dict/dict/dict')
+
+# Checks if the Track ID is dict if it is not 'continues'
+for dict in dicts:
+    if lookup(dict, 'Track ID') is None: continue
+
+    name = lookup(dict, 'Name')
+    artist = lookup(dict, 'Artist')
+    album = lookup(dict, 'Album')
+    genre = lookup(dict, 'Genre')
+    count = lookup(dict, 'Play Count')
+    rating = lookup(dict, 'Rating')
+    length = lookup(dict, 'Total Time')
+
+    # Sanity check. Leaves out any rows that don't contain the following tags
+    if name is None or artist is None or album is None or genre is None: continue
+
+    print artist, '--', name,'--',  album,'--',  genre, '--', length, '--', rating, '--', count
+    # prints the obtained info
+
+    # Lines 117- 130 fill the obtained info in the appropriate table and obtains the foreign keys to link rows
+    # Whenever a line is filled up a Primary Key is generated automatically
+    cur.execute('INSERT OR IGNORE INTO Artist(name) VALUES (?)', (artist, ))
+    cur.execute('SELECT id FROM Artist WHERE name = ?', (artist, ))
+    artist_id = cur.fetchone()[0]
+
+    cur.execute('INSERT OR IGNORE INTO Genre(name) VALUES (?)', (genre, ))
+    cur.execute('SELECT id FROM Genre WHERE name = ?', (genre, ))
+    genre_id = cur.fetchone()[0]
+
+    cur.execute('INSERT OR IGNORE INTO Album(artist_id, title) VALUES (?, ?)', (artist_id, album))
+    cur.execute('SELECT id FROM Album WHERE title = ?', (album, ))
+    album_id = cur.fetchone()[0]
+
+    cur.execute('INSERT OR REPLACE INTO Track(album_id, genre_id, title, length, rating, count) VALUES(?,?,?,?,?,?)',
+                (album_id, genre_id, name, length, rating, count))
+    file.commit() #Saves the changes
+
+# Output:
+# "For Those About To Rock (We Salute You)"	"AC/DC"	"Who Made Who"	"Rock"
+# "Hells Bells"	"AC/DC"	"Who Made Who"	"Rock"
+# "Shake Your Foundations"	"AC/DC"	"Who Made Who"	"Rock"
